@@ -5,7 +5,10 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Project;
 use App\ProjectList;
+use App\User;
+use Exception;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 
 class ProjectController extends Controller
@@ -49,6 +52,7 @@ class ProjectController extends Controller
         return $project::with('projectLists.tasks')->get();
     }
 
+    #get all tasks related to a project
     private function getProjectTasks($project) {
 
         $tasks = collect();
@@ -119,4 +123,25 @@ class ProjectController extends Controller
                 'message'       => "project deleted successfully."
         ]);
     }
+
+    /**
+     * add member to a project
+     */
+    public function addMember(Project $project) {
+
+        $member_id = request()->member_id;
+
+        try {
+            $project->assignMember($member_id);
+        }catch(Exception $e) {
+            return $e;
+        }
+
+        return response()->json(['message' => 'project\'s member created successfully...']);
+    }
+
+    #get users of a project
+    public function getProjectMembers(Project $project) {
+        return $project->users;
+    }    
 }

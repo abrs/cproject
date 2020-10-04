@@ -13,9 +13,6 @@ class ProjectList extends Model
         return $this->belongsTo(Project::class);
     }
 
-    public function lists_tasks() {
-        return $this->hasMany(List_Task::class, 'list_id');
-    } 
     public function tasks() {
         return $this->belongsToMany(Task::class, 'lists_tasks' , 'list_id', 'task_id')->withTimestamps();
     } 

@@ -23,10 +23,26 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 #api resourceful routes
 Route::apiResources([
+
+    #projects api resoures controller
     'projects' => ProjectController::class,
+    #project lists api resoures controller
     'project_lists' => ProjectListsController::class,
+    #tasks api resoures controller
     'tasks' => TasksController::class,
 ]);
 
-#single project.lists api route
-Route::post('projects/{project}/projectLists', 'API\ProjectListsController@addListToProject')->name('projects.lists.store');
+Route::prefix('projects')->group(function() {
+
+        #assign task to a member route
+        Route::post('/tasks/assign-members', 'API\TasksController@assignTaskToMember');
+        #get project members route
+        Route::get('/{project}/members', 'API\ProjectController@getProjectMembers');
+
+        #add member to a project route
+        Route::post('new-member-{project}', 'API\ProjectController@addMember');
+        
+        #single project.lists api route
+        Route::post('{project}/projectLists', 'API\ProjectListsController@addListToProject');
+    }
+);

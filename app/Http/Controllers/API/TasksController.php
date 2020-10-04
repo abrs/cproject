@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\List_Task;
 use App\ProjectList;
 use App\Task;
+use App\User;
 use Exception;
 use \Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -124,5 +125,22 @@ class TasksController extends Controller
                 'oldList'    => $oldTask,
                 'message'    => "task deleted successfully."
         ]);
+    }
+
+    /**
+     * assign task to a user from inside the project
+     * @uses getProjectMembers: from ProjectController to get one of the users id
+     * @uses getProjectTasks: from ProjectController to get a task id 
+     */
+    public function assignTaskToMember() {
+        try{
+            $userId = request()->user_id;
+            $taskId = request()->task_id;
+
+            $user = User::findOrFail($userId);
+            $user->assignTaskToUser($taskId);
+        }catch(Exception $e) {
+            return response()->json(['error' => $e]);
+        }
     }
 }
