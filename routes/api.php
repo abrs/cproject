@@ -21,6 +21,14 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+Route::prefix('users')->group(function() {
+
+    #resgister new user.
+    Route::post('', 'Auth\RegisterController@resgisterUserUsingAPI'); // Signup
+    #login a user.
+    Route::post('login', 'Auth\LoginController@ApiLogin'); // Signin
+});
+
 #api resourceful routes
 Route::apiResources([
 
@@ -36,8 +44,12 @@ Route::prefix('projects')->group(function() {
 
         #assign task to a member route
         Route::post('/tasks/assign-members', 'API\TasksController@assignTaskToMember');
+
         #get project members route
         Route::get('/{project}/members', 'API\ProjectController@getProjectMembers');
+        
+        #get project tasks route
+        Route::get('/{project}/tasks', 'API\ProjectController@getProjectTasks');
 
         #add member to a project route
         Route::post('new-member-{project}', 'API\ProjectController@addMember');

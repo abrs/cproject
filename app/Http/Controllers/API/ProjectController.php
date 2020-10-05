@@ -20,7 +20,12 @@ class ProjectController extends Controller
      */
     public function index()
     {
-        return response()->json(['projects' => Project::all()]);
+        $project_owner = request()->project_owner;
+
+        return response()->json([
+            'projects' => Project::where('project_owner', $project_owner)->get(),
+            // 'projects' => Project::all(),
+        ]);
     }
 
     /**
@@ -40,7 +45,10 @@ class ProjectController extends Controller
         #else create it with the specified name and description
         #that will make the name unique.        
         $project = Project::firstOrCreate(['name' => $request->name], 
-            ['description' => $request->description]);
+            [
+                'description' => $request->description,
+                'project_owner' => $request->project_owner,
+            ]);
 
         return response()->json([
                 'project' => $project,
@@ -53,7 +61,7 @@ class ProjectController extends Controller
     }
 
     #get all tasks related to a project
-    private function getProjectTasks($project) {
+    private function getProjectTasks(Project $project) {
 
         $tasks = collect();
 
@@ -76,6 +84,13 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {        
+
+        $project_owner = request()->project_owner;
+        
+        if($project->project_owner != $project_owner) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $projectAttributes = $this->getProjectAttributes($project);
 
         return response()->json([
@@ -95,6 +110,13 @@ class ProjectController extends Controller
      */
     public function update(Request $request, Project $project)
     {
+
+        $project_owner = request()->project_owner;
+        
+        if($project->project_owner != $project_owner) {
+            abort(403, 'Unauthorized action.');
+        }
+        
         $validatedProject = request()->validate([
             'name' => ['required'],
             'description' => ['min:3']

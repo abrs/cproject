@@ -1,0 +1,6 @@
+{
+    "editor.accessibilitySupport": "off",
+    "editor.gotoLocation.multipleDeclarations": "goto",
+    "editor.gotoLocation.multipleDefinitions": "goto",
+    "editor.cursorStyle": "block"
+}
