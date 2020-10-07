@@ -23,8 +23,10 @@ class ProjectListsController extends Controller
         $projId = request()->project_id;
         $projects = ProjectList::where('project_id', $projId)->get();
 
-        return response()->json(['projects' => $projects]);
+        return response()->json(['project lists' => $projects]);
     }
+
+    #----------------------------------------------------
 
     /**
      * Store a newly created resource in storage.
@@ -63,13 +65,12 @@ class ProjectListsController extends Controller
                 'list' => $list,
             ]);
 
-        }catch(ModelNotFoundException $ex) {
-            return response()->json(['error' => 'wrong task|project id!!']);
         }catch(Exception $e) {
             return response()->json(['error' => $e]);
         }
-
     }
+
+    #----------------------------------------------------
 
     /**
      * Display the specified resource.
@@ -85,6 +86,8 @@ class ProjectListsController extends Controller
         // ]);
     }
 
+    #----------------------------------------------------
+
     /**
      * Update the specified resource in storage.
      *
@@ -96,16 +99,16 @@ class ProjectListsController extends Controller
     {
 
         request()->validate([
-            'title' => ['required'],
+            'title'       => ['required'],
             'description' => ['min:3']
         ]);
 
         $title = request()->title;
-        $desc = request()->description; 
+        $desc  = request()->description; 
         // $projId = request()->project_id;
         
        $updated =  $projectList->update([
-           'title'=>  $title ,
+           'title'      =>  $title ,
            'description'=>  $desc ,
         //    'project_id'=>  $projId ,
         ]);
@@ -114,6 +117,8 @@ class ProjectListsController extends Controller
             'result' => $updated ? 'Project\'s list updated successfully.' : 'fail to update!!',
         ]);
     }
+
+    #----------------------------------------------------
 
     /**
      * Remove the specified resource from storage.
@@ -125,30 +130,33 @@ class ProjectListsController extends Controller
     {
         $oldList = $projectList;
         $projectList->delete();
+
         return response()->json([
                 'oldList'    => $oldList,
                 'message'    => "list deleted successfully."
         ]);
     }
 
+    #----------------------------------------------------
+
     public function addListToProject($project, Request $request)
     {
-        $validatedProject = request()->validate([
-            'title' => ['required'],
+        $request()->validate([
+            'title'       => ['required'],
             'description' => ['min:3']
         ]);    
 
         $title = request()->title;
-        $desc = request()->description; 
+        $desc  = request()->description; 
         
-       $list =  ProjectList::create([
-           'title'=>  $title ,
+        $list =  ProjectList::create([
+           'title'      =>  $title ,
            'description'=>  $desc ,
-           'project_id'=>  $project ,
+           'project_id' =>  $project ,
         ]);
 
         return response()->json([
-            'list' => $list,
+            'list'    => $list,
             'message' => "Project list created successfully."
         ]);
     }

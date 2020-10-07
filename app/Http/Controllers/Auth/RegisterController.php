@@ -71,28 +71,4 @@ class RegisterController extends Controller
             'password' => Hash::make($data['password']),
         ]);
     }
-
-    public function resgisterUserUsingAPI(Request $request) {
-        $rules = [
-            'name' => 'unique:users|required',
-            'email'    => 'unique:users|required',
-            'password' => 'required',
-        ];
-    
-        $input     = $request->only('name', 'email','password');
-        $validator = Validator::make($input, $rules);
-    
-        if ($validator->fails()) {
-            return response()->json(['success' => false, 'error' => $validator->messages()]);
-        }
-
-        $name = $request->name;
-        $email    = $request->email;
-        $password = $request->password;
-        $user     = User::create(['name' => $name, 'email' => $email, 'password' => Hash::make($password)]);
-    
-        \Auth::login($user);
-
-        return response()->json(auth()->user());
-    }
 }

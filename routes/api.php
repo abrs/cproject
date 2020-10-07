@@ -21,27 +21,41 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::prefix('users')->group(function() {
 
-    #resgister new user.
-    Route::post('', 'Auth\RegisterController@resgisterUserUsingAPI'); // Signup
-    #login a user.
-    Route::post('login', 'Auth\LoginController@ApiLogin'); // Signin
+Route::group(['prefix' => 'auth'], function () {
+
+    #login a user into the system 
+    Route::post('login', 'API\AuthController@login');
+    #register a user into the system 
+    Route::post('signup', 'API\AuthController@signup');
+
+    Route::group(['middleware' => 'auth:api'], function() {
+    
+        #logout route
+        Route::get('logout', 'API\AuthController@logout');
+        #user route
+        Route::get('user', 'API\AuthController@user');
+    });
+
 });
 
-#api resourceful routes
-Route::apiResources([
 
-    #projects api resoures controller
-    'projects' => ProjectController::class,
-    #project lists api resoures controller
-    'project_lists' => ProjectListsController::class,
-    #tasks api resoures controller
-    'tasks' => TasksController::class,
-]);
+Route::group(['middleware' => 'auth:api'], function() {
 
-Route::prefix('projects')->group(function() {
-
+    #api resourceful routes
+    Route::apiResources([
+    
+        #projects api resoures controller
+        'projects' => ProjectController::class,
+        #project lists api resoures controller
+        'project_lists' => ProjectListsController::class,
+        #tasks api resoures controller
+        'tasks' => TasksController::class,
+    ]);
+    
+    
+    Route::prefix('projects')->group(function() {
+    
         #assign task to a member route
         Route::post('/tasks/assign-members', 'API\TasksController@assignTaskToMember');
 
@@ -56,5 +70,6 @@ Route::prefix('projects')->group(function() {
         
         #single project.lists api route
         Route::post('{project}/projectLists', 'API\ProjectListsController@addListToProject');
-    }
-);
+    });
+});
+  

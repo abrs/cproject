@@ -5,10 +5,11 @@ namespace App;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Passport\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use Notifiable, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
@@ -41,14 +42,14 @@ class User extends Authenticatable
      * get user's projects
      */
     public function projects() {
-        return $this->belongsToMany(Project::class, 'members_projects', 'project_id', 'member_id')->withTimestamps();
+        return $this->belongsToMany(Project::class, 'members_projects', 'member_id', 'project_id')->withTimestamps();
     }
 
     /**
      * get user's tasks
      */
     public function tasks() {
-        return $this->belongsToMany(Task::class, 'members_tasks', 'task_id', 'member_id')->withTimestamps();
+        return $this->belongsToMany(Task::class, 'members_tasks', 'member_id', 'task_id')->withTimestamps();
     }
 
     /**

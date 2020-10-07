@@ -39,20 +39,4 @@ class LoginController extends Controller
     {
         $this->middleware('guest')->except('logout');
     }
-
-    /**
-     * login a user via api
-     */
-    public function ApiLogin(Request $request) {
-        if (\Auth::attempt(['email' => $request->input('email'), 
-            'password' => $request->input('password')])) {
-            // Authentication passed...
-            $user = \Auth::user();
-            return response()->json($user);
-        }else {
-            return response()->json([
-                'error' => new Exception('user\'s password or email is incorrect!!'),
-            ]);
-        }
-    }
 }

@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
-use App\List_Task;
-use App\ProjectList;
 use App\Task;
 use App\User;
 use Exception;
-use \Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\ProjectList;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use \Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class TasksController extends Controller
 {
@@ -22,13 +21,14 @@ class TasksController extends Controller
     {
         $projectId = request()->project_id;
         $listId = request()->list_id;
+        // $tasks = collect();
 
-        return Task::join('lists_tasks', 'tasks.id', '=', 'lists_tasks.task_id')
-            ->where('lists_tasks.list_id' , $listId)
-            ->join('project_lists', 'project_lists.id', '=', 'lists_tasks.list_id')
-            ->where('project_lists.project_id' , $projectId)
-            ->get(['tasks.title', 'tasks.description']);
+        return Task::where('list_id' , $listId)
+            ->where('project_id' , $projectId)            
+            ->get()->unique('id');
     }
+
+    #----------------------------------------------------
 
     /**
      * Store a newly created resource in storage.
@@ -55,7 +55,8 @@ class TasksController extends Controller
             
             #create the task record using title, description from the requset
             $task = Task::firstOrCreate(
-                ['title' => $title], ['description' => $description]
+                ['title' => $title], 
+                ['description' => $description]
             );
 
             #attach list to task.
@@ -73,6 +74,8 @@ class TasksController extends Controller
 
     }
 
+    #----------------------------------------------------
+
     /**
      * Display the specified resource.
      *
@@ -83,6 +86,8 @@ class TasksController extends Controller
     {
         //
     }
+
+    #----------------------------------------------------
 
     /**
      * Update the specified resource in storage.
@@ -111,6 +116,8 @@ class TasksController extends Controller
         ]);
     }
 
+    #----------------------------------------------------
+
     /**
      * Remove the specified resource from storage.
      *
@@ -121,11 +128,14 @@ class TasksController extends Controller
     {
         $oldTask = $task;
         $task->delete();
+        
         return response()->json([
                 'oldList'    => $oldTask,
                 'message'    => "task deleted successfully."
         ]);
     }
+
+    #----------------------------------------------------
 
     /**
      * assign task to a user from inside the project
@@ -143,4 +153,7 @@ class TasksController extends Controller
             return response()->json(['error' => $e]);
         }
     }
+
+    #----------------------------------------------------
+
 }

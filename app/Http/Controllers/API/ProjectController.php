@@ -5,7 +5,6 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Project;
 use App\ProjectList;
-use App\User;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -20,13 +19,13 @@ class ProjectController extends Controller
      */
     public function index()
     {
-        $project_owner = request()->project_owner;
 
         return response()->json([
-            'projects' => Project::where('project_owner', $project_owner)->get(),
-            // 'projects' => Project::all(),
+            'projects' => Project::all(),
         ]);
     }
+
+    #----------------------------------------------------
 
     /**
      * Store a newly created resource in storage.
@@ -47,7 +46,7 @@ class ProjectController extends Controller
         $project = Project::firstOrCreate(['name' => $request->name], 
             [
                 'description' => $request->description,
-                'project_owner' => $request->project_owner,
+                'project_owner' => \Auth::user()->id,
             ]);
 
         return response()->json([
@@ -56,9 +55,13 @@ class ProjectController extends Controller
             ]);
     }
 
+    #----------------------------------------------------
+
     private function getProjectAttributes($project) {
-        return $project::with('projectLists.tasks')->get();
+        return $project::with('projectLists.tasks')/*->where('project_owner', \Auth::user()->id)*/->get();
     }
+
+    #----------------------------------------------------
 
     #get all tasks related to a project
     private function getProjectTasks(Project $project) {
@@ -66,15 +69,22 @@ class ProjectController extends Controller
         $tasks = collect();
 
         ProjectList::whereHas('tasks', function(Builder $query) use ($project) {
+
             $query->where('project_id', $project->id);
-        })->get()->each(function($list) use ($tasks){
+
+        }) /* ->join('projects', 'projects.id', '=', 'project_lists.project_id')
+            ->where('projects.project_owner', \Auth::user()->id)*/
+            ->get()->each(function($list) use ($tasks){
+
             $list->tasks->each(function($task) use ($tasks) {
                 $tasks->push($task);
             });
         });
 
         return $tasks->unique('title');
-    }    
+    }   
+    
+    #----------------------------------------------------
 
     /**
      * Display the specified resource.
@@ -84,12 +94,6 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {        
-
-        $project_owner = request()->project_owner;
-        
-        if($project->project_owner != $project_owner) {
-            abort(403, 'Unauthorized action.');
-        }
 
         $projectAttributes = $this->getProjectAttributes($project);
 
@@ -101,6 +105,8 @@ class ProjectController extends Controller
         ]);
     }
 
+    #----------------------------------------------------
+
     /**
      * Update the specified resource in storage.
      *
@@ -110,12 +116,6 @@ class ProjectController extends Controller
      */
     public function update(Request $request, Project $project)
     {
-
-        $project_owner = request()->project_owner;
-        
-        if($project->project_owner != $project_owner) {
-            abort(403, 'Unauthorized action.');
-        }
         
         $validatedProject = request()->validate([
             'name' => ['required'],
@@ -130,6 +130,8 @@ class ProjectController extends Controller
         ]);
     }
 
+    #----------------------------------------------------
+
     /**
      * Remove the specified resource from storage.
      *
@@ -140,21 +142,25 @@ class ProjectController extends Controller
     {
         $oldProject = $project;
         $project->delete();
+
         return response()->json([
                 'oldProject'    => $oldProject,
                 'message'       => "project deleted successfully."
         ]);
     }
 
+    #----------------------------------------------------
+
     /**
      * add member to a project
      */
     public function addMember(Project $project) {
 
-        $member_id = request()->member_id;
-
         try {
+            
+            $member_id = request()->member_id;
             $project->assignMember($member_id);
+
         }catch(Exception $e) {
             return $e;
         }
@@ -162,8 +168,11 @@ class ProjectController extends Controller
         return response()->json(['message' => 'project\'s member created successfully...']);
     }
 
+    #----------------------------------------------------
+
     #get users of a project
     public function getProjectMembers(Project $project) {
+        
         return $project->users;
-    }    
+    }
 }
