@@ -9,6 +9,7 @@ use App\ProjectList;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use \Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\DB;
 
 class TasksController extends Controller
 {
@@ -41,26 +42,32 @@ class TasksController extends Controller
      */
     public function store(Request $request)
     {
-        request()->validate([
+
+        $validator = \Validator::make($request->all(), [
             'title' => ['required', 'min:3', 'max:20'],
             'description' => ['min:3'],
+            'list_id' => ['required']
         ]);
 
-        $title = request()->title;
-        $description = request()->description;
-
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()]);
+        }
+        
         try{
-            $list_id = request()->list_id;
-            ProjectList::findOrFail($list_id);
+
+            $list_id = $request->list_id;
+            $list = ProjectList::findOrFail($list_id);
             
             #create the task record using title, description from the requset
-            $task = Task::firstOrCreate(
-                ['title' => $title], 
-                ['description' => $description]
-            );
+            $task = $list->addTask($request->title, $request->description);
 
             #attach list to task.
-            $task->lists()->attach($list_id);
+            $attach = \DB::table('lists_tasks')
+                    ->where(['list_id' => $list_id, 'task_id' => $task->id])
+                    ->count() == 0;
+
+
+            if($attach)  {$task->lists()->attach($list_id);}
             
             return response()->json([
                 'task' => $task,
@@ -82,9 +89,25 @@ class TasksController extends Controller
      * @param  \App\Task  $task
      * @return \Illuminate\Http\Response
      */
-    public function show(Task $task)
+    public function show(int $task)
     {
-        //
+        //show all tasks which assigned to others.
+        $othersTasks = collect();
+
+        ProjectList::has('tasks')->get()
+        
+            ->each(function($list) use ($othersTasks){
+
+                $list->tasks()->join('members_tasks as mt', 'mt.task_id', '=', 'tasks.id')
+                    ->where('mt.member_id', '!=', \Auth::user()->id)
+                    ->get()
+                    ->unique()
+                    ->each(function($task) use ($othersTasks) {
+                        $othersTasks->push($task);
+                    });
+            });
+
+        return $othersTasks;
     }
 
     #----------------------------------------------------
@@ -98,10 +121,14 @@ class TasksController extends Controller
      */
     public function update(Request $request, Task $task)
     {
-        request()->validate([
-            'title' => ['required'],
+        $validator = \Validator::make($request->all(), [
+            'title'       => ['required'],
             'description' => ['min:3']
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()]);
+        }
 
         $title = request()->title;
         $desc = request()->description; 
@@ -138,17 +165,45 @@ class TasksController extends Controller
     #----------------------------------------------------
 
     /**
+     * assign task to a me (the authenticated user)
+     * @uses getProjectTasksIDs: from ProjectController to get a task id 
+     */
+    public function assignTaskToMe() {
+
+        try{
+            
+            $userId = \Auth::user()->id;
+            $taskId = request()->task_id;
+
+            $user = User::findOrFail($userId);
+            $result = $user->assignTaskToUser($taskId);
+
+            return response()->json(['result' => $result]);
+
+        }catch(Exception $e) {
+            return response()->json(['error' => $e]);
+        }
+
+    }
+
+    #----------------------------------------------------
+
+    /**
      * assign task to a user from inside the project
-     * @uses getProjectMembers: from ProjectController to get one of the users id
-     * @uses getProjectTasks: from ProjectController to get a task id 
+     * @uses getProjectMembersIDs: from ProjectController to get one of the users id
+     * @uses getProjectTasksIDs: from ProjectController to get a task id 
      */
     public function assignTaskToMember() {
+        
         try{
             $userId = request()->user_id;
             $taskId = request()->task_id;
 
             $user = User::findOrFail($userId);
-            $user->assignTaskToUser($taskId);
+            $result = $user->assignTaskToUser($taskId);
+
+            return response()->json(['result' => $result]);
+
         }catch(Exception $e) {
             return response()->json(['error' => $e]);
         }

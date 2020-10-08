@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Project;
 use App\ProjectList;
+use App\Scopes\OwnerScope;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -35,10 +36,14 @@ class ProjectController extends Controller
      */
     public function store(Request $request)
     {
-        $validatedProject = request()->validate([
+        $validator = \Validator::make($request->all(), [
             'name' => ['required'],
             'description' => ['min:3']
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()]);
+        }
 
         #firstOrCreate in an instance with the same name exists then pass creating new one, 
         #else create it with the specified name and description
@@ -57,14 +62,14 @@ class ProjectController extends Controller
 
     #----------------------------------------------------
 
-    private function getProjectAttributes($project) {
-        return $project::with('projectLists.tasks')/*->where('project_owner', \Auth::user()->id)*/->get();
+    private function getProjectAttributes(Project $project) {
+        return $project::with('projectLists.tasks')->get();
     }
 
     #----------------------------------------------------
 
     #get all tasks related to a project
-    private function getProjectTasks(Project $project) {
+    public function getProjectTasks(Project $project) {
 
         $tasks = collect();
 
@@ -72,9 +77,7 @@ class ProjectController extends Controller
 
             $query->where('project_id', $project->id);
 
-        }) /* ->join('projects', 'projects.id', '=', 'project_lists.project_id')
-            ->where('projects.project_owner', \Auth::user()->id)*/
-            ->get()->each(function($list) use ($tasks){
+        })->get()->each(function($list) use ($tasks){
 
             $list->tasks->each(function($task) use ($tasks) {
                 $tasks->push($task);
@@ -85,7 +88,14 @@ class ProjectController extends Controller
     }   
     
     #----------------------------------------------------
+    #get all tasks related to a project
+    public function getProjectTasksIDs(Project $project) {
 
+        return response()->json(['project_tasks' => $this->getProjectTasks($project)->pluck('id')]);
+    }   
+    
+    #----------------------------------------------------
+    
     /**
      * Display the specified resource.
      *
@@ -99,9 +109,9 @@ class ProjectController extends Controller
 
         return response()->json([
             'projectName'  => $projectAttributes->get(0)->name,
-            'projectLists' => $projectAttributes->get(0)->projectLists->pluck('title'),
-            'projectTasks' => $this->getProjectTasks($project)->pluck('title'),
-            // 'projectMembers' => $project->members,
+            'projectLists' => $projectAttributes->get(0)->projectLists,#->pluck('title'),
+            'projectTasks' => $this->getProjectTasks($project),#->pluck('title'),
+            'projectMembers' => $project->users,#->pluck('name'),
         ]);
     }
 
@@ -116,11 +126,14 @@ class ProjectController extends Controller
      */
     public function update(Request $request, Project $project)
     {
-        
-        $validatedProject = request()->validate([
+        $validator = \Validator::make($request->all(), [
             'name' => ['required'],
             'description' => ['min:3']
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()]);
+        }
 
         $project = $project->update($validatedProject);
 
@@ -171,8 +184,63 @@ class ProjectController extends Controller
     #----------------------------------------------------
 
     #get users of a project
-    public function getProjectMembers(Project $project) {
+    public function getProjectMembersIDs(Project $project) {
         
-        return $project->users;
+        $projectMembers = collect();
+
+        $project->users()->each(function($member) use ($projectMembers) {
+            $projectMembers->add($member->id);
+        });
+
+        return response()->json(['project_members' => $projectMembers]);
     }
+
+    #----------------------------------------------------
+
+    /**
+     * show all projects that shared with me (I am a participant in it and not its owner).
+     */
+    public function getSharedProjects() {
+        
+        $sharedWithMe = Project::withoutGlobalScope(OwnerScope::class)
+            ->select('projects.*')
+            #join projects and its members using project id
+            ->join('members_projects as mp', 'projects.id', '=', 'mp.project_id')
+            
+            #get projects I am a participant in it
+            ->where('mp.member_id', \Auth::user()->id)
+            #execlude projects I am its owner
+            ->where('projects.project_owner', '!=', \Auth::user()->id)
+            ->get();
+
+        return response()->json(['shared_projects' => $sharedWithMe]);
+    }
+
+    #----------------------------------------------------
+
+    /**
+     * show all my tasks, walk through each project tasks whom assigned to me.
+     */
+    public function getMyTasks() {
+        
+        $myTasks = collect();
+
+        ProjectList::has('tasks')->get()
+        
+            ->each(function($list) use ($myTasks){
+
+                $list->tasks()->join('members_tasks as mt', 'mt.task_id', '=', 'tasks.id')
+                    ->where('mt.member_id', \Auth::user()->id)
+                    ->get()
+                    ->unique()
+                    ->each(function($task) use ($myTasks) {
+                        $myTasks->push($task);
+                    });
+            });
+
+        return $myTasks;
+
+    }
+
+    
 }

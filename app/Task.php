@@ -25,12 +25,11 @@ class Task extends Model
     protected static function booted()
     {
         static::addGlobalScope('', function (Builder $builder) {
-            $builder->select(['tasks.id', 'tasks.title', 'tasks.description', 'tasks.created_at', 
-                'tasks.updated_at', 'lists_tasks.list_id', 'project_lists.project_id'])
+            $builder->select(['tasks.*', 'lt.list_id', 'pl.project_id'])
 
-                    ->join('lists_tasks', 'tasks.id', '=', 'lists_tasks.task_id')
-                    ->join('project_lists', 'project_lists.id', '=', 'lists_tasks.list_id')
-                    ->join('projects', 'project_lists.project_id', '=', 'projects.id')
+                    ->join('lists_tasks as lt', 'tasks.id', '=', 'lt.task_id')
+                    ->join('project_lists as pl', 'pl.id', '=', 'lt.list_id')
+                    ->join('projects', 'pl.project_id', '=', 'projects.id')
                     ->where('projects.project_owner' , \Auth::user()->id);
         });
     }

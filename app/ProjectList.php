@@ -37,4 +37,25 @@ class ProjectList extends Model
                     ->where('projects.project_owner', \Auth::user()->id);
         });
     }
+
+    #----------------------------------------------------
+
+    #add task to a list
+    public function addTask($title, $description){
+
+        #reinvinting firstOrCreate because of the ambiguos title column
+        $task = \DB::table('tasks')->where('tasks.title', $title);
+        $createTask = $task->count() == 0;
+
+        if($createTask) {
+            return $this->tasks()->create([
+                'title' => $title,
+                'description' => $description,
+            ]);
+        }else {
+            return $task->first();
+        }
+    }
+
+
 }

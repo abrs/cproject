@@ -43,7 +43,15 @@ class Project extends Model
      */
     public function assignMember(int $member_id) {
 
-        return $this->users()->attach($member_id);
+        #attach list to task.
+        $attach = \DB::table('members_projects')
+        ->where(['member_id' => $member_id, 'project_id' => $this->id])
+        ->count() == 0;
+
+
+        if($attach)  {
+            return $this->users()->attach($member_id);
+        }
     }
 
     #----------------------------------------------------

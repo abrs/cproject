@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
-use App\List_Task;
-use App\Project;
-use App\ProjectList;
 use App\Task;
 use Exception;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Project;
+use App\List_Task;
+use App\ProjectList;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class ProjectListsController extends Controller
 {
@@ -39,27 +39,40 @@ class ProjectListsController extends Controller
      */
     public function store(Request $request)
     {
-        request()->validate([
+        $validator = \Validator::make($request->all(), [
             'title' => ['required'],
-            'description' => ['min:3']
-        ]);    
+            'description' => ['min:3'],
+            'project_id' => ['required'],
+            'task_id' => ['required'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()]);
+        }  
         
-        $title = request()->title;
-        $description = request()->description;
+        $title = $request->title;
+        $description = $request->description;
         
         try{
-            $projId = request()->project_id;
+            $projId = $request->project_id;
             $project = Project::findOrFail($projId);
 
             #get the task id which the list belongs to.
-            $taskId = request()->task_id;
+            $taskId = $request->task_id;
             Task::findOrFail($taskId);
 
             #get the list id to which i want to assign a task
             $list =  $project->addList($title, $description);
+            #attach list to task.
+            $attach = \DB::table('lists_tasks')
+                    ->where(['list_id' => $list->id, 'task_id' => $taskId])
+                    ->count() == 0;
 
-            #use attach to create new list_task record
-            $list->tasks()->attach($taskId);
+
+            if($attach)  {
+                #use attach to create new list_task record
+                $list->tasks()->attach($taskId);
+            }
             
             return response()->json([
                 'list' => $list,
@@ -78,12 +91,26 @@ class ProjectListsController extends Controller
      * @param  \App\ProjectList  $projectList
      * @return \Illuminate\Http\Response
      */
-    public function show(ProjectList $projectList)
+    public function show(int $projectList)
     {
-        //TODO: only show tasks assigned to me.
-        // return response()->json([
-        //     'projectTasksAssignedToMe' => $projectList->tasks,
-        // ]);
+        //only show tasks assigned to me.
+        $myTasks = collect();
+
+        ProjectList::has('tasks')->get()
+        
+            ->each(function($list) use ($myTasks){
+
+                $list->tasks()->join('members_tasks as mt', 'mt.task_id', '=', 'tasks.id')
+                    ->where('mt.member_id', \Auth::user()->id)
+                    ->get()
+                    ->unique()
+                    ->each(function($task) use ($myTasks) {
+                        $myTasks->push($task);
+                    });
+            });
+
+        return $myTasks;
+        
     }
 
     #----------------------------------------------------
@@ -98,10 +125,14 @@ class ProjectListsController extends Controller
     public function update(Request $request, ProjectList $projectList)
     {
 
-        request()->validate([
+        $validator = \Validator::make($request->all(), [
             'title'       => ['required'],
             'description' => ['min:3']
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()]);
+        }
 
         $title = request()->title;
         $desc  = request()->description; 
@@ -141,10 +172,14 @@ class ProjectListsController extends Controller
 
     public function addListToProject($project, Request $request)
     {
-        $request()->validate([
+        $validator = \Validator::make($request->all(), [
             'title'       => ['required'],
             'description' => ['min:3']
-        ]);    
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()]);
+        }   
 
         $title = request()->title;
         $desc  = request()->description; 

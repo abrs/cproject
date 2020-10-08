@@ -2,6 +2,7 @@
 
 namespace App;
 
+use Exception;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -57,6 +58,22 @@ class User extends Authenticatable
      */
     public function assignTaskToUser(int $taskId) {
 
-        return $this->tasks()->attach($taskId);
+        try{
+            
+            #attach task to member.
+            $attach = \DB::table('members_tasks')
+                    ->where(['member_id' => $this->id, 'task_id' => $taskId])
+                    ->count() == 0;
+
+
+            if($attach)  {
+                $this->tasks()->attach($taskId);
+            }
+
+            return 'task assigned successfully..';
+
+        }catch(Exception $e) {
+            return $e;
+        }
     }
 }

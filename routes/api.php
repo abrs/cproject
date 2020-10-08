@@ -40,36 +40,49 @@ Route::group(['prefix' => 'auth'], function () {
 });
 
 
-Route::group(['middleware' => 'auth:api'], function() {
+Route::group(['middleware' => 'auth:api'], function() {    
+
+    Route::group(['prefix' => 'projects'], function() {
+    
+        #assign task to a member route
+        Route::post('/tasks/assign-to-me', 'API\TasksController@assignTaskToMe'); #2-1
+        
+        #assign task to a member route
+        Route::post('/tasks/assign-member', 'API\TasksController@assignTaskToMember'); #2-2
+        
+        #add member to a project route
+        Route::post('/new-member-{project}', 'API\ProjectController@addMember'); #1        
+
+        #get shared projects
+        Route::get('/all-shared-projects', 'API\ProjectController@getSharedProjects'); #4
+
+        #get project tasks iDs route
+        Route::get('/my-tasks', 'API\ProjectController@getMyTasks'); #5
+
+        #get project tasks
+        Route::get('/{project}/detailed-tasks', 'API\ProjectController@getProjectTasks'); #6
+
+        #get project members route
+        Route::get('/{project}/members', 'API\ProjectController@getProjectMembersIDs'); #2-2
+
+        #get project tasks iDs route
+        Route::get('/{project}/tasks', 'API\ProjectController@getProjectTasksIDs'); #2-1
+        
+        #single project.lists api route
+        Route::post('/{project}/projectLists', 'API\ProjectListsController@addListToProject');
+
+    });
 
     #api resourceful routes
     Route::apiResources([
     
         #projects api resoures controller
-        'projects' => ProjectController::class,
+        'projects' => ProjectController::class, #3.index
         #project lists api resoures controller
         'project_lists' => ProjectListsController::class,
         #tasks api resoures controller
         'tasks' => TasksController::class,
-    ]);
+    ]);        
     
-    
-    Route::prefix('projects')->group(function() {
-    
-        #assign task to a member route
-        Route::post('/tasks/assign-members', 'API\TasksController@assignTaskToMember');
-
-        #get project members route
-        Route::get('/{project}/members', 'API\ProjectController@getProjectMembers');
-        
-        #get project tasks route
-        Route::get('/{project}/tasks', 'API\ProjectController@getProjectTasks');
-
-        #add member to a project route
-        Route::post('new-member-{project}', 'API\ProjectController@addMember');
-        
-        #single project.lists api route
-        Route::post('{project}/projectLists', 'API\ProjectListsController@addListToProject');
-    });
 });
   
