@@ -60,13 +60,13 @@ Route::group(['middleware' => 'auth:api'], function() {
         Route::get('/my-tasks', 'API\ProjectController@getMyTasks'); #5
 
         #get project tasks
-        Route::get('/{project}/detailed-tasks', 'API\ProjectController@getProjectTasks'); #6
+        // Route::get('/{project}/detailed-tasks', 'API\ProjectController@getProjectTasks'); #6
 
         #get project members route
         Route::get('/{project}/members', 'API\ProjectController@getProjectMembers'); #2-2
 
         #get project tasks iDs route
-        Route::get('/{project}/tasks', 'API\ProjectController@getProjectTasks'); #2-1
+        Route::get('/{project}/tasks', 'API\ProjectController@getProjectTasks'); #2-1, 6
         
         #single project.lists api route
         Route::post('/{project}/projectLists', 'API\ProjectListsController@addListToProject');
