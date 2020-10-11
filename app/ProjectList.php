@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProjectList extends Model
 {
-    //TODO: is project_id should be in the fillable array or it's dangerous because of mass assignment attack.
     protected $fillable = ['title', 'description', 'project_id'];
 
     #----------------------------------------------------

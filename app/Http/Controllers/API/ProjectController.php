@@ -184,12 +184,12 @@ class ProjectController extends Controller
     #----------------------------------------------------
 
     #get users of a project
-    public function getProjectMembersIDs(Project $project) {
+    public function getProjectMembers(Project $project) {
         
         $projectMembers = collect();
 
         $project->users()->each(function($member) use ($projectMembers) {
-            $projectMembers->add($member->id);
+            $projectMembers->add($member);
         });
 
         return response()->json(['project_members' => $projectMembers]);

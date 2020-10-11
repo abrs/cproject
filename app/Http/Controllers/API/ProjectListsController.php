@@ -97,7 +97,7 @@ class ProjectListsController extends Controller
         $myTasks = collect();
 
         ProjectList::has('tasks')->get()
-        
+            //TODO: dd the previous line to get its return value to debug why unique is necessary
             ->each(function($list) use ($myTasks){
 
                 $list->tasks()->join('members_tasks as mt', 'mt.task_id', '=', 'tasks.id')
