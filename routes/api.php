@@ -3,6 +3,7 @@
 use API\ProjectController;
 use API\ProjectListsController;
 use API\TasksController;
+use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -35,12 +36,19 @@ Route::group(['prefix' => 'auth'], function () {
         Route::get('logout', 'API\AuthController@logout');
         #user route
         Route::get('user', 'API\AuthController@user');
+
+        #get all users of the system.
+        Route::get('all-users',  function() {
+            return response()->json(User::all());
+        });
+        
     });
 
 });
 
 
-Route::group(['middleware' => 'auth:api'], function() {    
+Route::group(['middleware' => 'auth:api'], function() {
+
 
     Route::group(['prefix' => 'projects'], function() {
     
@@ -50,17 +58,17 @@ Route::group(['middleware' => 'auth:api'], function() {
         #assign task to a member route
         Route::post('/tasks/assign-member', 'API\TasksController@assignTaskToMember'); #2-2
         
-        #add member to a project route
-        Route::post('/new-member-{project}', 'API\ProjectController@addMember'); #1        
-
         #get shared projects
         Route::get('/all-shared-projects', 'API\ProjectController@getSharedProjects'); #4
-
+        
         #get project tasks iDs route
         Route::get('/my-tasks', 'API\ProjectController@getMyTasks'); #5
-
+        
         #get project tasks
         // Route::get('/{project}/detailed-tasks', 'API\ProjectController@getProjectTasks'); #6
+        
+        #add member to a project route
+        Route::post('/{project}/new-member', 'API\ProjectController@addMember'); #1        
 
         #get project members route
         Route::get('/{project}/members', 'API\ProjectController@getProjectMembers'); #2-2

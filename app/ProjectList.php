@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class ProjectList extends Model
 {
     protected $fillable = ['title', 'description', 'project_id'];
+    protected $hidden = ['pivot'];
 
     #----------------------------------------------------
 
@@ -19,7 +20,7 @@ class ProjectList extends Model
 
     public function tasks() {
         return $this->belongsToMany(Task::class, 'lists_tasks' , 'list_id', 'task_id')->withTimestamps();
-    } 
+    }
 
     #----------------------------------------------------
 

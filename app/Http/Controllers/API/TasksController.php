@@ -20,6 +20,16 @@ class TasksController extends Controller
      */
     public function index()
     {
+
+        $validator = \Validator::make(request()->all(), [
+            'project_id' => ['required'],
+            'list_id' => ['required'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()]);
+        }
+
         $projectId = request()->project_id;
         $listId = request()->list_id;
         // $tasks = collect();
@@ -91,7 +101,7 @@ class TasksController extends Controller
      */
     public function show(int $task)
     {
-        //show all tasks which assigned to others.
+        //show all tasks which assigned to others with its different lists.
         $othersTasks = collect();
 
         ProjectList::has('tasks')->get()
@@ -119,8 +129,17 @@ class TasksController extends Controller
      * @param  \App\Task  $task
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Task $task)
+    public function update(Request $request, int $task)
     {
+
+        try{
+            #get the task by its id
+            $task = Task::findOrFail($task);
+
+        }catch(Exception $e) {
+            return response()->json(['error' => 'can\'t find your project']);
+        }
+
         $validator = \Validator::make($request->all(), [
             'title'       => ['required'],
             'description' => ['min:3']
@@ -151,8 +170,17 @@ class TasksController extends Controller
      * @param  \App\Task  $task
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Task $task)
+    public function destroy(int $task)
     {
+
+        try{
+            #get the task by its id
+            $task = ProjectList::findOrFail($task);
+
+        }catch(Exception $e) {
+            return response()->json(['error' => 'can\'t find your task']);
+        }
+
         $oldTask = $task;
         $task->delete();
         

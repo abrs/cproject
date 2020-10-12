@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
-use App\Project;
-use App\ProjectList;
-use App\Scopes\OwnerScope;
-use Exception;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\Eloquent\Builder;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Scopes\OwnerScope;
+use App\ProjectList;
+use App\Project;
+use Exception;
 
 class ProjectController extends Controller
 {
@@ -38,7 +38,7 @@ class ProjectController extends Controller
     {
         $validator = \Validator::make($request->all(), [
             'name' => ['required'],
-            'description' => ['min:3']
+            'description' => ['min:3'],
         ]);
 
         if ($validator->fails()) {
@@ -47,13 +47,26 @@ class ProjectController extends Controller
 
         #firstOrCreate in an instance with the same name exists then pass creating new one, 
         #else create it with the specified name and description
-        #that will make the name unique.        
-        $project = Project::firstOrCreate(['name' => $request->name], 
-            [
-                'description' => $request->description,
-                'project_owner' => \Auth::user()->id,
-            ]);
+        #that will make the name unique.
+        $project = Project::firstOrCreate([
+            'name' => $request->name, 
+        ], 
+        
+        [
+            'project_owner' => \Auth::user()->id,
+            'description' => $request->description,
+        ]);
 
+        #attach me owner of the project.
+        $attach = \DB::table('members_projects')
+        ->where(['member_id' => \Auth::user()->id, 'project_id' => $project->id])
+        ->count() == 0;
+
+
+        if($attach)  {
+            $project->users()->attach(\Auth::user()->id);
+        }
+            
         return response()->json([
                 'project' => $project,
                 'message' => "Project created successfully."
@@ -63,7 +76,7 @@ class ProjectController extends Controller
     #----------------------------------------------------
 
     private function getProjectAttributes(Project $project) {
-        return $project::with('projectLists.tasks')->get();
+        return $project::with('projectLists.tasks')->where('id', $project->id)->get();
     }
 
     #----------------------------------------------------
@@ -73,18 +86,24 @@ class ProjectController extends Controller
 
         $tasks = collect();
 
-        ProjectList::whereHas('tasks', function(Builder $query) use ($project) {
+        #get all the lists whom have at least one task
+        $listsWithTasks = ProjectList::whereHas('tasks', function(Builder $query) use ($project) {
 
             $query->where('project_id', $project->id);
 
-        })->get()->each(function($list) use ($tasks){
+        })->get();
+        
+        #for each list get its tasks
+        $listsWithTasks->each(function($list) use ($tasks, $project){
 
-            $list->tasks->each(function($task) use ($tasks) {
-                $tasks->push($task);
-            });
+            $list->tasks()->where(['pl.project_id' => $project->id, 'lt.list_id' => $list->id])->get()#;#->unique('list_id')
+                ->each(function($task) use ($tasks) {
+                    $tasks->push($task);
+                });
         });
 
-        return $tasks->unique('title');
+        return $tasks->sortBy('id');#
+
     }   
     
     #----------------------------------------------------
@@ -109,7 +128,7 @@ class ProjectController extends Controller
 
         return response()->json([
             'projectName'  => $projectAttributes->get(0)->name,
-            'projectLists' => $projectAttributes->get(0)->projectLists,#->pluck('title'),
+            'projectLists' => $projectAttributes->get(0)->projectLists()->where('project_id', $project->id)->get(),#->pluck('title'),
             'projectTasks' => $this->getProjectTasks($project),#->pluck('title'),
             'projectMembers' => $project->users,#->pluck('name'),
         ]);
@@ -135,7 +154,10 @@ class ProjectController extends Controller
             return response()->json(['errors' => $validator->errors()]);
         }
 
-        $project = $project->update($validatedProject);
+        $project = $project->update([
+            'name' => $request->name,
+            'description' => $request->description,
+        ]);
 
         return response()->json([
             'project' => $project,

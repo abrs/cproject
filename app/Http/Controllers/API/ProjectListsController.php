@@ -20,6 +20,14 @@ class ProjectListsController extends Controller
      */
     public function index()
     {
+        $validator = \Validator::make(request()->all(), [
+            'project_id' => ['required'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()]);
+        }
+
         $projId = request()->project_id;
         $projects = ProjectList::where('project_id', $projId)->get();
 
@@ -48,7 +56,7 @@ class ProjectListsController extends Controller
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()]);
-        }  
+        }
         
         $title = $request->title;
         $description = $request->description;
@@ -97,7 +105,6 @@ class ProjectListsController extends Controller
         $myTasks = collect();
 
         ProjectList::has('tasks')->get()
-            //TODO: dd the previous line to get its return value to debug why unique is necessary
             ->each(function($list) use ($myTasks){
 
                 $list->tasks()->join('members_tasks as mt', 'mt.task_id', '=', 'tasks.id')
@@ -122,8 +129,17 @@ class ProjectListsController extends Controller
      * @param  \App\ProjectList  $projectList
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, ProjectList $projectList)
+    public function update(Request $request, int $projectList)
     {
+
+        try{
+            #get the project list by its id
+            $projectList = ProjectList::findOrFail($projectList);
+
+        }catch(Exception $e) {
+            return response()->json(['error' => 'can\'t find your project']);
+        }
+
 
         $validator = \Validator::make($request->all(), [
             'title'       => ['required'],
@@ -134,9 +150,9 @@ class ProjectListsController extends Controller
             return response()->json(['errors' => $validator->errors()]);
         }
 
-        $title = request()->title;
-        $desc  = request()->description; 
-        // $projId = request()->project_id;
+        $title = $request->title;
+        $desc  = $request->description; 
+        // $projId = $request->project_id;
         
        $updated =  $projectList->update([
            'title'      =>  $title ,
@@ -157,8 +173,16 @@ class ProjectListsController extends Controller
      * @param  \App\ProjectList  $projectList
      * @return \Illuminate\Http\Response
      */
-    public function destroy(ProjectList $projectList)
+    public function destroy(int $projectList)
     {
+        try{
+            #get the list by its id
+            $projectList = ProjectList::findOrFail($projectList);
+
+        }catch(Exception $e) {
+            return response()->json(['error' => 'can\'t find your list']);
+        }
+        
         $oldList = $projectList;
         $projectList->delete();
 
