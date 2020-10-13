@@ -1,11 +1,13 @@
 <?php
 
-use API\ProjectController;
-use API\ProjectListsController;
-use API\TasksController;
-use App\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use API\ProjectListsController;
+use Illuminate\Http\Request;
+use API\ProjectController;
+use API\TasksController;
+use API\CommentsController;
+use API\RepliesController;
+use App\User;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,7 +43,7 @@ Route::group(['prefix' => 'auth'], function () {
         Route::get('all-users',  function() {
             return response()->json(User::all());
         });
-        
+
     });
 
 });
@@ -90,6 +92,11 @@ Route::group(['middleware' => 'auth:api'], function() {
         'project_lists' => ProjectListsController::class,
         #tasks api resoures controller
         'tasks' => TasksController::class,
+        #comments api resoures controller
+        'comments' => CommentsController::class,
+        #replies api resoures controller
+        'replies' => RepliesController::class,
+        
     ]);        
     
 });
