@@ -54,11 +54,6 @@ class UsersController extends Controller
         */
         if($requestingImage = $request->has('image')) {
             $uploadedImage = $this->uploadImage($request);
-            Image::create([
-                'image_name' =>$uploadedImage['image_name'],
-                'image_url' =>$uploadedImage['image_url'],
-                'mime' =>$uploadedImage['mime'],
-            ]);
         }
 
         $user = new User([
@@ -250,6 +245,12 @@ class UsersController extends Controller
             "image_url" => \Storage::disk('public')->url($image_uploaded_path),
             "mime" => $image->getClientMimeType()
         ];
+
+        Image::create([
+            'image_name' =>$uploadedImageResponse['image_name'],
+            'image_url' =>$uploadedImageResponse['image_url'],
+            'mime' =>$uploadedImageResponse['mime'],
+        ]);
 
         return $uploadedImageResponse;
     
