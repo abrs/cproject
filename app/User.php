@@ -19,7 +19,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password',
+        'full_name', 'email', 'password', 'image',
     ];
 
     /**
@@ -40,6 +40,14 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+    #----------------------relations------------------------------
+
+    public function comments() {
+        return $this->hasMany(Comment::class, 'comment_id', 'id');
+    }
+
+    #----------------------------------------------------
+
     /**
      * get user's projects
      */
@@ -47,12 +55,16 @@ class User extends Authenticatable
         return $this->belongsToMany(Project::class, 'members_projects', 'member_id', 'project_id')->withTimestamps();
     }
 
+    #----------------------------------------------------
+
     /**
      * get user's tasks
      */
     public function tasks() {
         return $this->belongsToMany(Task::class, 'members_tasks', 'member_id', 'task_id')->withTimestamps();
     }
+
+    #----------------------------------------------------
 
     /**
      * assign task to a user

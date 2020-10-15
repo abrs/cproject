@@ -10,6 +10,12 @@ class Task extends Model
     protected $fillable = ['title', 'description'];
     protected $hidden = ['pivot'];
 
+    #--------------------relations--------------------------------
+
+    public function comments() {
+        return $this->hasMany(Comment::class, 'task_id', 'id');
+    }
+    
     #----------------------------------------------------
 
     public function lists() {

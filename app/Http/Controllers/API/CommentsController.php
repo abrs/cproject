@@ -14,9 +14,9 @@ class CommentsController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index()
-    {
+    {        
         return response()->json([
-            'comments' => Comment::all()
+            'comments' => Comment::all(),
         ]);
     }
 
@@ -32,6 +32,7 @@ class CommentsController extends Controller
     {
         $validator = \Validator::make($request->all(), [
             'body' => ['required', 'min:4'],
+            'task_id' => ['required', 'numeric'],
         ]);
 
         if ($validator->fails()) {
@@ -41,6 +42,7 @@ class CommentsController extends Controller
         $comment = Comment::create([
             'body' => $request->body,
             'user_id' => \Auth::user()->id,
+            'task_id' => $request->task_id,
         ]);
 
         return response()->json(['comment' => $comment]);
@@ -55,9 +57,17 @@ class CommentsController extends Controller
      * @param  \App\Comment  $comment
      * @return \Illuminate\Http\Response
      */
-    public function show(Comment $comment)
+    public function show(int $comment)
     {
-        return response()->json(['comment' => $comment]);
+        $validator = \Validator::make(request()->all(), [
+            'task_id' => ['required', 'numeric'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()]);
+        }
+
+        return response()->json(['comment' => Comment::where(['id' => $comment, 'task_id' => request()->task_id])->first()]);
     }
 
     #----------------------------------------------------

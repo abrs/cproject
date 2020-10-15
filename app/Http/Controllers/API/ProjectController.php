@@ -54,7 +54,7 @@ class ProjectController extends Controller
         
         [
             'project_owner' => \Auth::user()->id,
-            'description' => $request->description,
+            'description' => $request->has('description') ? $request->description : null,
         ]);
 
         #attach me owner of the project.
@@ -156,7 +156,7 @@ class ProjectController extends Controller
 
         $project = $project->update([
             'name' => $request->name,
-            'description' => $request->description,
+            'description' => $request->has('description') ? $request->description : $project->description,
         ]);
 
         return response()->json([

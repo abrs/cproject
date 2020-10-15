@@ -59,7 +59,7 @@ class ProjectListsController extends Controller
         }
         
         $title = $request->title;
-        $description = $request->description;
+        $description = $request->has('description') ? $request->description : null;
         
         try{
             $projId = $request->project_id;
@@ -151,7 +151,7 @@ class ProjectListsController extends Controller
         }
 
         $title = $request->title;
-        $desc  = $request->description; 
+        $desc  = $request->has('description') ? $request->description : $projectList->description; 
         // $projId = $request->project_id;
         
        $updated =  $projectList->update([

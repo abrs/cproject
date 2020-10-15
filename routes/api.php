@@ -7,7 +7,8 @@ use API\ProjectController;
 use API\TasksController;
 use API\CommentsController;
 use API\RepliesController;
-use App\User;
+use API\UsersController;
+use App\Image;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,29 +29,27 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 Route::group(['prefix' => 'auth'], function () {
 
     #login a user into the system 
-    Route::post('login', 'API\AuthController@login');
+    Route::post('login', 'API\UsersController@login');
     #register a user into the system 
-    Route::post('signup', 'API\AuthController@signup');
+    Route::post('signup', 'API\UsersController@store');
 
     Route::group(['middleware' => 'auth:api'], function() {
     
         #logout route
-        Route::get('logout', 'API\AuthController@logout');
+        Route::get('logout', 'API\UsersController@logout');
         #user route
-        Route::get('user', 'API\AuthController@user');
-
-        #get all users of the system.
-        Route::get('all-users',  function() {
-            return response()->json(User::all());
-        });
-
+        Route::get('user', 'API\UsersController@user'); 
+        #post an image if authenticated
+        Route::post('post-image', 'API\UsersController@uploadImage');
+        #get all uploaded images to update a user image using the image_url
+        Route::get('posted-images', function() {return response()->json(['uploaded_images' => Image::all()]);});
     });
-
+    
 });
 
 
 Route::group(['middleware' => 'auth:api'], function() {
-
+    
 
     Route::group(['prefix' => 'projects'], function() {
     
@@ -96,6 +95,8 @@ Route::group(['middleware' => 'auth:api'], function() {
         'comments' => CommentsController::class,
         #replies api resoures controller
         'replies' => RepliesController::class,
+        #users api resoures controller
+        'users' => UsersController::class,
         
     ]);        
     

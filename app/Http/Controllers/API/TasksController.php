@@ -69,7 +69,7 @@ class TasksController extends Controller
             $list = ProjectList::findOrFail($list_id);
             
             #create the task record using title, description from the requset
-            $task = $list->addTask($request->title, $request->description);
+            $task = $list->addTask($request->title, $request->has('description') ? $request->description : null);
 
             #attach list to task.
             $attach = \DB::table('lists_tasks')
@@ -149,8 +149,8 @@ class TasksController extends Controller
             return response()->json(['errors' => $validator->errors()]);
         }
 
-        $title = request()->title;
-        $desc = request()->description; 
+        $title = $request->title;
+        $desc = $request->has('description') ? $request->description : $task->description; 
         
        $updated =  $task->update([
            'title'=>  $title ,
