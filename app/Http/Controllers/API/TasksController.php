@@ -42,6 +42,57 @@ class TasksController extends Controller
     #----------------------------------------------------
 
     /**
+     * filter tasks depending on filters
+     */
+    public function customFilter(Request $request) {
+        $validator = \Validator::make($request->all(), [
+            'project_id' => ['required'],
+            'list_id' => ['required'],
+            'field' => ['required'],
+            'operator' => ['required'],
+            'field_value' => ['required'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()]);
+        }
+
+        $projectId = $request->project_id;
+        $listId = $request->list_id;
+
+        $tasksCollection = Task::where('list_id' , $listId)
+                            ->where('project_id' , $projectId)            
+                            ->get()->unique('id');
+
+        $filteredResult = $tasksCollection->filter(function($task) use ($request){
+            $filterThrough = $request->field;
+            return $this->complexFilter($task->$filterThrough, $request->operator, $request->field_value);
+        });
+
+        return response()->json(['filtered_result' => $filteredResult]);
+    }
+
+    private function complexFilter($field, $operator, $value): bool {
+        switch($operator) {
+            case '==':
+                return $field == $value;
+            break;
+
+            case '>':
+                return $field > $value;
+            break;
+            
+            case '<':
+                return $field < $value;
+            break;
+        }
+
+        return false;
+    }
+
+    #----------------------------------------------------
+
+    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request

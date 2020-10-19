@@ -69,6 +69,9 @@ Route::group(['middleware' => 'auth:api'], function() {
         Route::post('/users/{user}/assign-roles', 'API\AuthController@assignRoleToUser');
     });
 
+    #special tasks
+    Route::get('filters', 'API\TasksController@customFilter');
+
     Route::group(['prefix' => 'projects'], function() {
     
         #assign task to a member route
