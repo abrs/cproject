@@ -13,8 +13,10 @@ return [
     |
     */
 
+    'prefered_guard' => 'api',
+
     'defaults' => [
-        'guard' => 'web',
+        'guard' => 'api',
         'passwords' => 'users',
     ],
 

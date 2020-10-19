@@ -8,7 +8,10 @@ use API\TasksController;
 use API\CommentsController;
 use API\RepliesController;
 use API\UsersController;
+use API\AuthController;
 use App\Image;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,7 +29,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 
-Route::group(['prefix' => 'auth'], function () {
+Route::group(['prefix' => 'auth'], function () {    
 
     #login a user into the system 
     Route::post('login', 'API\UsersController@login');
@@ -49,7 +52,22 @@ Route::group(['prefix' => 'auth'], function () {
 
 
 Route::group(['middleware' => 'auth:api'], function() {
-    
+
+    #Roles and permissions
+    Route::group(['prefix' => 'roles-permissions', 'middleware' => ['role:manager']], function () {
+        #3-1.1 - get all permissions to assign some of them or all to a role
+        Route::get('/permissions', function() {return response()->json(['permissions' => Permission::all()]);});
+        #3-1.2 - get all roles to assign some of them or all permissions
+        Route::get('/roles', function() {return response()->json(['roles' => Role::all()]);});
+        #1- add permission
+        Route::post('/permissions/add-permission', 'API\AuthController@addPermisssion');
+        #2- add role
+        Route::post('/roles/add-role', 'API\AuthController@addRole');
+        #3-2 - sync role with some permissions => detach all role's permissions and attach the new ones.
+        Route::post('/roles/{role}/add-permissions', 'API\AuthController@assignPermissionToRole');
+        #4 - sync user with role| roles
+        Route::post('/users/{user}/assign-roles', 'API\AuthController@assignRoleToUser');
+    });
 
     Route::group(['prefix' => 'projects'], function() {
     
