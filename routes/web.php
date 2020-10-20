@@ -17,6 +17,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+#socialite package.
+Route::get('login/{website}', 'Auth\LoginController@redirectToProvider');
+Route::get('login/{website}/callback', 'Auth\LoginController@handleProviderCallback');
+
 Auth::routes();
 
 Route::get('/home', 'HomeController@index')->name('home');
