@@ -6,10 +6,10 @@ use App\Task;
 use App\User;
 use Exception;
 use App\ProjectList;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use \Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Support\Facades\DB;
 
 class TasksController extends Controller
 {
@@ -65,14 +65,26 @@ class TasksController extends Controller
                             ->get()->unique('id');
 
         $filteredResult = $tasksCollection->filter(function($task) use ($request){
+
             $filterThrough = $request->field;
+
+            // if(is_numeric($request->field_value)){
+
             return $this->complexFilter($task->$filterThrough, $request->operator, $request->field_value);
+            // }else {
+                
+            //     return Str::contains($task->$filterThrough, $request->field_value);
+            // }
         });
 
         return response()->json(['filtered_result' => $filteredResult]);
     }
 
-    private function complexFilter($field, $operator, $value): bool {
+    #----------------------------------------------------
+
+    /**used to filter result */
+    private function complexFilter($field, $operator, $value): bool {        
+
         switch($operator) {
             case '==':
                 return $field == $value;
@@ -290,4 +302,28 @@ class TasksController extends Controller
 
     #----------------------------------------------------
 
+    
+    /**
+     * show all my tasks, walk through each project tasks whom assigned to me.
+     */
+    public function getMyTasks() {
+        
+        $myTasks = collect();
+
+        ProjectList::has('tasks')->get()
+        
+            ->each(function($list) use ($myTasks){
+
+                $list->tasks()->join('members_tasks as mt', 'mt.task_id', '=', 'tasks.id')
+                    ->where('mt.member_id', \Auth::user()->id)
+                    ->get()
+                    ->unique()
+                    ->each(function($task) use ($myTasks) {
+                        $myTasks->push($task);
+                    });
+            });
+
+        return $myTasks;
+
+    }
 }

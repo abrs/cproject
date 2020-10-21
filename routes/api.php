@@ -84,7 +84,7 @@ Route::group(['middleware' => 'auth:api'], function() {
         Route::get('/all-shared-projects', 'API\ProjectController@getSharedProjects'); #4
         
         #get project tasks iDs route
-        Route::get('/my-tasks', 'API\ProjectController@getMyTasks'); #5
+        Route::get('/my-tasks', 'API\TasksController@getMyTasks'); #5
         
         #get project tasks
         // Route::get('/{project}/detailed-tasks', 'API\ProjectController@getProjectTasks'); #6

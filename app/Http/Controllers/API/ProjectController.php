@@ -75,6 +75,7 @@ class ProjectController extends Controller
 
     #----------------------------------------------------
 
+    #get all the lists with thier tasks.
     private function getProjectAttributes(Project $project) {
         return $project::with('projectLists.tasks')->where('id', $project->id)->get();
     }
@@ -239,30 +240,4 @@ class ProjectController extends Controller
     }
 
     #----------------------------------------------------
-
-    /**
-     * show all my tasks, walk through each project tasks whom assigned to me.
-     */
-    public function getMyTasks() {
-        
-        $myTasks = collect();
-
-        ProjectList::has('tasks')->get()
-        
-            ->each(function($list) use ($myTasks){
-
-                $list->tasks()->join('members_tasks as mt', 'mt.task_id', '=', 'tasks.id')
-                    ->where('mt.member_id', \Auth::user()->id)
-                    ->get()
-                    ->unique()
-                    ->each(function($task) use ($myTasks) {
-                        $myTasks->push($task);
-                    });
-            });
-
-        return $myTasks;
-
-    }
-
-    
 }
