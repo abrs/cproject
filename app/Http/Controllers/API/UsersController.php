@@ -110,7 +110,7 @@ class UsersController extends Controller
 
         $user->full_name = $request->has('full_name') ? $request->full_name : $user->full_name;
         $user->email = $request->has('email') ? $request->email : $user->email;
-        $user->password = $request->has('password') ? $request->password : bcrypt($user->password);
+        $user->password = $request->has('password') ? bcrypt($request->password) : $user->password;
         $user->image = $request->has('image') ? $request->image : $user->image;
         $user->save();
 
